@@ -14,16 +14,14 @@ import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction
 import me.vaan.networkMonitor.data.MachineMap
 import me.vaan.networkMonitor.data.MultipleMachineData
-import me.vaan.networkMonitor.util.energyConsumption
-import me.vaan.networkMonitor.util.energyNetwork
-import me.vaan.networkMonitor.util.isMachineActive
-import me.vaan.networkMonitor.util.plus
+import me.vaan.networkMonitor.util.*
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.Component.text
-import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.util.LinkedList
+import java.util.*
 
 
 class NetworkMonitor(
@@ -61,12 +59,10 @@ class NetworkMonitor(
 
     }
 
-    private fun getNetworkConsumers(network: EnergyNet) : MachineMap {
-        val consumers = network.consumers
-
+    private fun processNetworkMachines(supply: Map<Location, EnergyNetComponent>) : MachineMap {
         val print = MachineMap()
 
-        for ((location, cmp) in consumers) {
+        for ((location, cmp) in supply) {
             if (cmp !is SlimefunItem) {
                 continue
             }
@@ -84,26 +80,29 @@ class NetworkMonitor(
     private fun getDisplayMachines(network: EnergyNet) : List<ItemStack> {
         val itemList = LinkedList<ItemStack>()
 
-        val machines = getNetworkConsumers(network)
-        for ((sf, data) in machines) {
+        val consumers = processNetworkMachines(network.consumers)
+        for ((sf, data) in consumers) {
             val item = sf.item.clone()
             val consumer = sf as EnergyNetComponent
-            val lore = LinkedList<TextComponent>()
+            val lore = LinkedList<Component>()
 
             lore += text("")
-            lore += text("<white><b>Amount:</b> ${data.amount} </white>")
-            lore += text("<white><b>Active:</b> ${data.active} </white>")
-            lore += text("<white><b>Capacity:</b> ${data.amount * consumer.capacity} </white>")
-            lore += text("<white><b>Stored Energy:</b> ${data.storedEnergy} </white>")
+            lore += "<white><b>Amount:</b> ${data.amount} </white>".mini()
+            lore += "<white><b>Active:</b> ${data.active} </white>".mini()
+            lore += "<white><b>Capacity:</b> ${data.amount * consumer.capacity} </white>".mini()
+            lore += "<white><b>Stored Energy:</b> ${data.storedEnergy} </white>".mini()
 
             val consumption = sf.energyConsumption
             if (consumption != null) {
-                lore += text("<white><b>Max Consumption:</b> ${data.amount * consumption} </white>")
-                lore += text("<white><b>Present Consumption:</b> ${data.active * consumption} </white>")
+                lore += "<white><b>Max Consumption:</b> ${data.amount * consumption} </white>".mini()
+                lore += "<white><b>Present Consumption:</b> ${data.active * consumption} </white>".mini()
             }
 
             lore += text("")
-            item.itemMeta.lore(lore)
+            val actualLore = lore.map { it.decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE) }
+            item.editMeta {
+                it.lore(actualLore)
+            }
 
             itemList += item
         }
