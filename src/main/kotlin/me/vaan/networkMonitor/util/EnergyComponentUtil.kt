@@ -23,6 +23,10 @@ fun EnergyNetComponent.isMachineActive(l: Location) : Boolean {
 val SlimefunItem.energyConsumption : Int? get() {
     //get the most specific possible class representation
     val actualClass = this.javaClass.cast(this)
-    val getEnergy = this.javaClass.getDeclaredMethod("getEnergyConsumption") ?: return null
-    return getEnergy.invoke(actualClass) as Int
+    try {
+        val getEnergy = this.javaClass.getDeclaredMethod("getEnergyConsumption") ?: return null
+        return getEnergy.invoke(actualClass) as Int
+    } catch (_: Exception) {
+        return null
+    }
 }
