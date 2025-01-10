@@ -6,6 +6,7 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType
 import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetComponent
+import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetProvider
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler
 import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNet
 import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNetComponentType
@@ -42,8 +43,8 @@ class NetworkMonitor(
         const val AMOUNT: Int = 36
     }
 
-    override fun preRegister() {
-        val handler = BlockUseHandler { blockUserHandler: PlayerRightClickEvent ->
+    override fun preRegister() = addItemHandler(
+        BlockUseHandler { blockUserHandler: PlayerRightClickEvent ->
             val location: Location
             val player = blockUserHandler.player
 
@@ -57,10 +58,7 @@ class NetworkMonitor(
             val network: EnergyNet = location.energyNetwork ?: return@BlockUseHandler
             getGUI(player, 0, network).open(player)
         }
-
-        addItemHandler(handler)
-
-    }
+    )
 
     private fun processNetworkMachines(supply: Map<Location, EnergyNetComponent>) : MachineMap {
         val print = MachineMap()
@@ -73,7 +71,7 @@ class NetworkMonitor(
             val toProcess = if(cmp is ReactorAccessPort) {
                 val reactorLocation = Location(l.world, l.x, l.y - 3, l.z)
                 if (supply.containsKey(reactorLocation)) {
-                    cmp
+                    continue
                 } else {
                     BlockStorage.check(reactorLocation) ?: cmp
                 }
@@ -85,8 +83,24 @@ class NetworkMonitor(
 
             val entry = print.getOrDefault(toProcess, MultipleMachineData())
             entry.amount++
-            entry.active += netComponent.isMachineActive(l)
+
+            val active = netComponent.isMachineActive(l)
+            entry.active += active
             entry.storedEnergy += netComponent.getCharge(l)
+
+            if (toProcess is EnergyNetProvider) {
+                entry.energyTotal += toProcess.getGeneratedOutput(l, BlockStorage.getLocationInfo(l))
+                print[cmp] = entry
+                continue
+            }
+
+            if (active) {
+                val value = toProcess.energyConsumption
+                if (value != null) {
+                    entry.energyTotal += value
+                }
+            }
+
             print[cmp] = entry
         }
 
@@ -101,7 +115,7 @@ class NetworkMonitor(
         lore += "<white><b>Amount:</b> ${data.amount} </white>".mini()
         lore += "<white><b>Active:</b> ${data.active} </white>".mini()
 
-        if (consumer.capacity != 0) {
+        if (0 < consumer.capacity) {
             lore += "<white><b>Capacity:</b> ${data.amount * consumer.capacity} </white>".mini()
             lore += "<white><b>Stored Energy:</b> ${data.storedEnergy} </white>".mini()
         }
@@ -115,7 +129,7 @@ class NetworkMonitor(
             val consumption = sf.energyConsumption
             if (consumption != null) {
                 lore += "<white><b>Max Consumption:</b> ${data.amount * consumption} </white>".mini()
-                lore += "<white><b>Present Consumption:</b> ${data.active * consumption} </white>".mini()
+                lore += "<white><b>Present Consumption:</b> ${data.energyTotal} </white>".mini()
             }
 
             lore
@@ -130,6 +144,9 @@ class NetworkMonitor(
             if (energyProvider != null) {
                 lore += "<white><b>Max Production:</b> ${data.amount * energyProvider.energyProduction} </white>".mini()
                 lore += "<white><b>Present Production:</b> ${data.active * energyProvider.energyProduction} </white>".mini()
+            } else if (sf is EnergyNetProvider) {
+                lore += "<white><b>Max Production:</b> Cannot calculate for this generator type. </white>".mini()
+                lore += "<white><b>Present Production:</b> ${data.energyTotal} </white>".mini()
             }
 
             lore
