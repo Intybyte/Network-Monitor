@@ -98,7 +98,8 @@ class NetworkMonitor(
 
             val consumption = sf.energyConsumption
             if (consumption != null) {
-                lore += text("<white><b>Consumption:</b> ${data.amount * consumption} </white>")
+                lore += text("<white><b>Max Consumption:</b> ${data.amount * consumption} </white>")
+                lore += text("<white><b>Present Consumption:</b> ${data.active * consumption} </white>")
             }
 
             lore += text("")
