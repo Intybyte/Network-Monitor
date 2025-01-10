@@ -12,15 +12,11 @@ class NetworkMonitorPlugin : AbstractAddon() {
             private set
         lateinit var metrics: Metrics
             private set
-        lateinit var pluginFolder: File
-            private set
     }
 
     override suspend fun onEnableAsync() {
         instance = this
-        pluginFolder = this.dataFolder
         metrics = Metrics(this, 0) //TODO: add service id
-        saveDefaultConfig()
 
         GuideStuff.register()
     }
