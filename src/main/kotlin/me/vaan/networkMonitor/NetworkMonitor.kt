@@ -74,17 +74,8 @@ class NetworkMonitor(
             val entry = print.getOrDefault(cmp, MultipleMachineData())
             entry.amount++
             entry.active += cmp.isMachineActive(location)
-
-            /*
-            if (cmp is MachineProcessHolder<*>) {
-                val msg = if (cmp.isMachineActive(location)) "§4§lOffline" else "§a§lOnline"
-
-                lore += ""
-                lore += "§bStored Energy:§3 " + cmp.getCharge(location) + " J"
-                lore += msg
-                meta.lore = lore
-                element.itemMeta = meta
-            }*/
+            entry.storedEnergy += cmp.getCharge(location)
+            print[cmp] = entry
         }
 
         return print
@@ -100,13 +91,14 @@ class NetworkMonitor(
             val lore = LinkedList<TextComponent>()
 
             lore += text("")
-            lore += text("<white><b>Amount</b>: ${data.amount} </white>")
-            lore += text("<white><b>Active</b>: ${data.active} </white>")
-            lore += text("<white><b>Capacity</b>: ${data.amount * consumer.capacity} </white>")
+            lore += text("<white><b>Amount:</b> ${data.amount} </white>")
+            lore += text("<white><b>Active:</b> ${data.active} </white>")
+            lore += text("<white><b>Capacity:</b> ${data.amount * consumer.capacity} </white>")
+            lore += text("<white><b>Stored Energy:</b> ${data.storedEnergy} </white>")
 
             val consumption = sf.energyConsumption
             if (consumption != null) {
-                lore += text("<white><b>Consumption</b>: ${data.amount * consumption} </white>")
+                lore += text("<white><b>Consumption:</b> ${data.amount * consumption} </white>")
             }
 
             lore += text("")
