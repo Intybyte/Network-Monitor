@@ -18,14 +18,17 @@ fun EnergyNetComponent.isMachineActive(l: Location) : Boolean {
     return true
 }
 
-//It is time for some warcrimes.
+private val energyMap = HashMap<Class<out SlimefunItem>, Int>()
+//It is time for some war crimes.
 val SlimefunItem.energyConsumption : Int? get() {
     //get the most specific possible class representation
-    val actualClass = this.javaClass.cast(this)
-    try {
-        val getEnergy = this.javaClass.getDeclaredMethod("getEnergyConsumption") ?: return null
-        return getEnergy.invoke(actualClass) as Int
-    } catch (_: Exception) {
-        return null
+    return energyMap.getOrPut(this.javaClass) {
+        val actualClass = this.javaClass.cast(this)
+        try {
+            val getEnergy = this.javaClass.getDeclaredMethod("getEnergyConsumption")
+            return getEnergy.invoke(actualClass) as Int
+        } catch (_: Exception) {
+            return null
+        }
     }
 }
