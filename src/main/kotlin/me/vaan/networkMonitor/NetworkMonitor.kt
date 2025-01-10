@@ -9,9 +9,12 @@ import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetComponent
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler
 import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNet
 import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNetComponentType
+import io.github.thebusybiscuit.slimefun4.implementation.items.cargo.ReactorAccessPort
+import io.github.thebusybiscuit.slimefun4.implementation.items.electric.AbstractEnergyProvider
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction
+import me.mrCookieSlime.Slimefun.api.BlockStorage
 import me.vaan.networkMonitor.data.MachineMap
 import me.vaan.networkMonitor.data.MultipleMachineData
 import me.vaan.networkMonitor.util.*
@@ -62,40 +65,90 @@ class NetworkMonitor(
     private fun processNetworkMachines(supply: Map<Location, EnergyNetComponent>) : MachineMap {
         val print = MachineMap()
 
-        for ((location, cmp) in supply) {
+        for ((l, cmp) in supply) {
             if (cmp !is SlimefunItem) {
                 continue
             }
 
-            val entry = print.getOrDefault(cmp, MultipleMachineData())
+            val toProcess = if(cmp is ReactorAccessPort) {
+                val reactorLocation = Location(l.world, l.x, l.y - 3, l.z)
+                if (supply.containsKey(reactorLocation)) {
+                    cmp
+                } else {
+                    BlockStorage.check(reactorLocation) ?: cmp
+                }
+            } else {
+                cmp
+            }
+
+            val netComponent = toProcess as EnergyNetComponent
+
+            val entry = print.getOrDefault(toProcess, MultipleMachineData())
             entry.amount++
-            entry.active += cmp.isMachineActive(location)
-            entry.storedEnergy += cmp.getCharge(location)
+            entry.active += netComponent.isMachineActive(l)
+            entry.storedEnergy += netComponent.getCharge(l)
             print[cmp] = entry
         }
 
         return print
     }
 
-    private fun getDisplayMachines(network: EnergyNet) : List<ItemStack> {
-        val itemList = LinkedList<ItemStack>()
+    private fun generalProcessing(sf: SlimefunItem, data: MultipleMachineData) : LinkedList<Component> {
+        val consumer = sf as EnergyNetComponent
+        val lore = LinkedList<Component>()
 
-        val consumers = processNetworkMachines(network.consumers)
-        for ((sf, data) in consumers) {
-            val item = sf.item.clone()
-            val consumer = sf as EnergyNetComponent
-            val lore = LinkedList<Component>()
+        lore += text("")
+        lore += "<white><b>Amount:</b> ${data.amount} </white>".mini()
+        lore += "<white><b>Active:</b> ${data.active} </white>".mini()
 
-            lore += text("")
-            lore += "<white><b>Amount:</b> ${data.amount} </white>".mini()
-            lore += "<white><b>Active:</b> ${data.active} </white>".mini()
+        if (consumer.capacity != 0) {
             lore += "<white><b>Capacity:</b> ${data.amount * consumer.capacity} </white>".mini()
             lore += "<white><b>Stored Energy:</b> ${data.storedEnergy} </white>".mini()
+        }
 
+        return lore
+    }
+
+    private fun getDisplayConsumers(network: EnergyNet) : List<ItemStack> {
+        return getDisplayWhatever(network.consumers) { sf, data ->
+            val lore = LinkedList<Component>()
             val consumption = sf.energyConsumption
             if (consumption != null) {
                 lore += "<white><b>Max Consumption:</b> ${data.amount * consumption} </white>".mini()
                 lore += "<white><b>Present Consumption:</b> ${data.active * consumption} </white>".mini()
+            }
+
+            lore
+        }
+    }
+
+    private fun getDisplayGenerators(network: EnergyNet) : List<ItemStack> {
+        return getDisplayWhatever(network.generators) { sf, data ->
+            val lore = LinkedList<Component>()
+            val energyProvider = sf as? AbstractEnergyProvider
+
+            if (energyProvider != null) {
+                lore += "<white><b>Max Production:</b> ${data.amount * energyProvider.energyProduction} </white>".mini()
+                lore += "<white><b>Present Production:</b> ${data.active * energyProvider.energyProduction} </white>".mini()
+            }
+
+            lore
+        }
+    }
+
+    private fun getDisplayWhatever(
+        map: Map<Location, EnergyNetComponent>,
+        process: ((SlimefunItem, MultipleMachineData) -> List<Component>)? = null
+    ) : List<ItemStack> {
+        val itemList = LinkedList<ItemStack>()
+
+        val consumers = processNetworkMachines(map)
+        for ((sf, data) in consumers) {
+            val item = sf.item.clone()
+            val lore = generalProcessing(sf, data)
+
+            if (process != null) {
+                lore += process(sf, data) // specify if there is extra data to process
             }
 
             lore += text("")
@@ -108,6 +161,19 @@ class NetworkMonitor(
         }
 
         return itemList
+
+    }
+
+    private fun getDisplayCapacitors(network: EnergyNet) : List<ItemStack> {
+        return getDisplayWhatever(network.capacitors)
+    }
+
+    private fun getDisplayMachines(network: EnergyNet) : List<ItemStack> {
+        val consumerItems = getDisplayConsumers(network)
+        val generatorItems = getDisplayGenerators(network)
+        val capacitorItems = getDisplayCapacitors(network)
+
+        return consumerItems + generatorItems + capacitorItems
     }
 
     private fun getGUI(p: Player, page: Int, network: EnergyNet): ChestMenu {
