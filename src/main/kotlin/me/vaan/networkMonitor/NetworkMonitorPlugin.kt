@@ -5,10 +5,10 @@ import org.bstats.bukkit.Metrics
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
-class NetworkMonitor : AbstractAddon() {
+class NetworkMonitorPlugin : AbstractAddon() {
 
     companion object {
-        lateinit var instance: NetworkMonitor
+        lateinit var instance: NetworkMonitorPlugin
             private set
         lateinit var metrics: Metrics
             private set

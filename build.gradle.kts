@@ -20,7 +20,7 @@ repositories {
 
 bukkit {
     name = "NetworkMonitor"
-    main = "me.vaan.networkMonitor.NetworkMonitor"
+    main = "me.vaan.networkMonitor.NetworkMonitorPlugin"
     apiVersion = "1.20"
     version = project.version.toString()
     author = "Vaan1310"
