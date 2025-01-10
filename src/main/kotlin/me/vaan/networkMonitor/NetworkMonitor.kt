@@ -123,6 +123,33 @@ class NetworkMonitor(
         return lore
     }
 
+    private fun getDisplayWhatever(
+        map: Map<Location, EnergyNetComponent>,
+        process: ((SlimefunItem, MultipleMachineData) -> List<Component>)? = null
+    ) : List<ItemStack> {
+        val itemList = LinkedList<ItemStack>()
+
+        val consumers = processNetworkMachines(map)
+        for ((sf, data) in consumers) {
+            val item = sf.item.clone()
+            val lore = generalProcessing(sf, data)
+
+            if (process != null) {
+                lore += process(sf, data) // specify if there is extra data to process
+            }
+
+            lore += text("")
+            val actualLore = lore.map { it.decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE) }
+            item.editMeta {
+                it.lore(actualLore)
+            }
+
+            itemList += item
+        }
+
+        return itemList
+    }
+
     private fun getDisplayConsumers(network: EnergyNet) : List<ItemStack> {
         return getDisplayWhatever(network.consumers) { sf, data ->
             val lore = LinkedList<Component>()
@@ -151,34 +178,6 @@ class NetworkMonitor(
 
             lore
         }
-    }
-
-    private fun getDisplayWhatever(
-        map: Map<Location, EnergyNetComponent>,
-        process: ((SlimefunItem, MultipleMachineData) -> List<Component>)? = null
-    ) : List<ItemStack> {
-        val itemList = LinkedList<ItemStack>()
-
-        val consumers = processNetworkMachines(map)
-        for ((sf, data) in consumers) {
-            val item = sf.item.clone()
-            val lore = generalProcessing(sf, data)
-
-            if (process != null) {
-                lore += process(sf, data) // specify if there is extra data to process
-            }
-
-            lore += text("")
-            val actualLore = lore.map { it.decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE) }
-            item.editMeta {
-                it.lore(actualLore)
-            }
-
-            itemList += item
-        }
-
-        return itemList
-
     }
 
     private fun getDisplayCapacitors(network: EnergyNet) : List<ItemStack> {
