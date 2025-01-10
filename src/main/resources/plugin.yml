@@ -1,0 +1,4 @@
+name: NetworkMonitor
+version: '1.0.0'
+main: me.vaan.networkMonitor.NetworkMonitor
+api-version: '1.20'
