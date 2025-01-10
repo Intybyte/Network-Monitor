@@ -10,7 +10,7 @@ import org.bukkit.Location
 fun EnergyNetComponent.isMachineActive(l: Location) : Boolean {
     //This isn't very reliable as end-game machines which are faster will show as offline if clicked when a recipe just completed
     if (this is MachineProcessHolder<*>) {
-        val processor = this.machineProcessor as MachineProcessor<MachineOperation>
+        val processor = this.machineProcessor as MachineProcessor<*>
         val op = processor.getOperation(l)
         return op != null
     }
