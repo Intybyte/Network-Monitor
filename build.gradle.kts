@@ -36,7 +36,7 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.0.2")
 }
 
-val targetJavaVersion = 17
+val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
 }
