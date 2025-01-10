@@ -6,7 +6,6 @@ import io.github.thebusybiscuit.slimefun4.core.attributes.MachineProcessHolder
 import io.github.thebusybiscuit.slimefun4.core.machines.MachineOperation
 import io.github.thebusybiscuit.slimefun4.core.machines.MachineProcessor
 import org.bukkit.Location
-import kotlin.reflect.cast
 
 fun EnergyNetComponent.isMachineActive(l: Location) : Boolean {
     //This isn't very reliable as end-game machines which are faster will show as offline if clicked when a recipe just completed
@@ -16,7 +15,7 @@ fun EnergyNetComponent.isMachineActive(l: Location) : Boolean {
         return op != null
     }
 
-    return false
+    return true
 }
 
 //It is time for some warcrimes.
