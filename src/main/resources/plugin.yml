@@ -1,4 +1,0 @@
-name: NetworkMonitor
-version: '1.0.0'
-main: me.vaan.networkMonitor.NetworkMonitorPlugin
-api-version: '1.20'
