@@ -21,6 +21,8 @@ class NetworkMonitorPlugin : AbstractAddon() {
         pluginFolder = this.dataFolder
         metrics = Metrics(this, 0) //TODO: add service id
         saveDefaultConfig()
+
+        GuideStuff.register()
     }
 
     override suspend fun onDisableAsync() {
